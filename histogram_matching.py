@@ -51,9 +51,10 @@ cdf_target_b = np.cumsum(pdf_target_b)
 #
 # plt.show()
 
+# Histogram Matching algorithm returns resulting image
 def histogramMatch(input, target, cdf_input, cdf_target):
     R, C = input.shape
-    K = np.zeros((R,C), dtype=int)
+    img = np.zeros((R,C), dtype=int)
 
     mi = np.min(input)
     Mi = np.max(input)
@@ -65,33 +66,35 @@ def histogramMatch(input, target, cdf_input, cdf_target):
 
             gj += 1
         print(gj)
-        K = K + (gj * (input == gi))
+        img = img + (gj * (input == gi))
 
-    return K
+    return img
 
 
-anan = histogramMatch(input_r, target_r, cdf_input_r, cdf_target_r)
-baban = histogramMatch(input_g, target_g, cdf_input_g, cdf_target_g)
-deden = histogramMatch(input_b, target_b, cdf_input_b, cdf_target_b)
-print(anan)
-hey = findPdf(anan)
-hey = np.cumsum(hey)
+# Match histogram of every input channel to target channel
+result_r = histogramMatch(input_r, target_r, cdf_input_r, cdf_target_r)
+result_g = histogramMatch(input_g, target_g, cdf_input_g, cdf_target_g)
+result_b = histogramMatch(input_b, target_b, cdf_input_b, cdf_target_b)
 
+# find cdf of resulting image
+pdf_result_r = findPdf(result_r)
+cdf_result_r = np.cumsum(pdf_result_r)
+
+# show cdf of input, target and resulting image
 plt.bar(range(256), cdf_input_r, width=0.7, align='center')
 plt.show()
 plt.bar(range(256), cdf_target_r, width=0.7, align='center')
 plt.show()
-plt.bar(range(256), hey, width=0.7, align='center')
+plt.bar(range(256), cdf_result_r, width=0.7, align='center')
 plt.show()
 
-
-
-ldu = cv2.merge((anan, baban, deden))
+# merge resulting channes and show all images
+result_rgb = cv2.merge((result_r, result_g, result_b))
 plt.imshow(input_rgb)
 plt.show()
 plt.imshow(target_rgb)
 plt.show()
-plt.imshow(ldu)
+plt.imshow(result_rgb)
 plt.show()
 
 

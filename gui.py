@@ -12,10 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 
-##########################################
-## Do not forget to delete "return NotImplementedError"
-## while implementing a function
-########################################
+
 
 class App(QMainWindow):
     def __init__(self):
@@ -32,9 +29,7 @@ class App(QMainWindow):
         self.targetLoaded = None
         # a figure instance to plot on
         self.figure = Figure()
-
-        # this is the Canvas Widget that displays the `figure`
-        # it takes the `figure` instance as a parameter to __init__
+        # Canvas widget that displays figure
         self.canvas = FigureCanvas(self.figure)
 
         # You can define other things in here
@@ -102,9 +97,6 @@ class App(QMainWindow):
         inner_window.setLayout(hbox)
         self.setCentralWidget(inner_window)
 
-
-        #self.setLayout(vbox)
-
         self.show()
 
     def closeApp(self):
@@ -129,17 +121,13 @@ class App(QMainWindow):
     def plot(self):
 
         # random data
-        data = [np.random.random() for i in range(10)]
-
+        data = [np.random.random() for i in range(5)]
         # create an axis
         ax = self.figure.add_subplot(111)
-
-        # discards the old graph
+        # clear old axis
         ax.clear()
-
         # plot data
-        ax.plot(data, '*-')
-
+        ax.plot(data)
         # refresh canvas
         self.canvas.draw()
 
