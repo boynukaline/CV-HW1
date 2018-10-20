@@ -30,6 +30,12 @@ class App(QMainWindow):
 
         self.inputLoaded = None
         self.targetLoaded = None
+        # a figure instance to plot on
+        self.figure = Figure()
+
+        # this is the Canvas Widget that displays the `figure`
+        # it takes the `figure` instance as a parameter to __init__
+        self.canvas = FigureCanvas(self.figure)
 
         # You can define other things in here
         self.initUI()
@@ -38,7 +44,7 @@ class App(QMainWindow):
         # This function is called when the user clicks File->Input Image.
         self.inputLoaded = QFileDialog.getOpenFileName(self, 'Input Image', os.getenv('HOME'))
         self.input_img.setPixmap(QPixmap(self.inputLoaded[0]))
-        print(self.inputLoaded[0])
+        self.plot()
 
 
     def openTargetImage(self):
@@ -81,6 +87,8 @@ class App(QMainWindow):
         input_box.setLayout(vbox_input)
         self.input_img = QLabel()
         vbox_input.addWidget(self.input_img)
+        vbox_input.addWidget(self.canvas)
+        self.plot()
 
         vbox_target = QVBoxLayout(self)
         target_box.setLayout(vbox_target)
@@ -118,7 +126,22 @@ class App(QMainWindow):
 
         self.calcHistogram()
 
+    def plot(self):
 
+        # random data
+        data = [np.random.random() for i in range(10)]
+
+        # create an axis
+        ax = self.figure.add_subplot(111)
+
+        # discards the old graph
+        ax.clear()
+
+        # plot data
+        ax.plot(data, '*-')
+
+        # refresh canvas
+        self.canvas.draw()
 
     def calcHistogram(self, I):
         # Calculate histogram
