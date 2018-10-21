@@ -28,7 +28,7 @@ class App(QMainWindow):
         self.targetLoaded = None
 
 
-        # a figure instance to plot on
+        # a figure instance to plot the histograms on
         self.figure_plotinput = Figure(figsize=(3,3))
         self.inputcanvas = FigureCanvas(self.figure_plotinput)
         self.figure_plottarget = Figure(figsize=(3,3))
@@ -50,8 +50,7 @@ class App(QMainWindow):
         self.input_rgb = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB)
         self.vbox_input.addWidget(self.inputcanvas)
 
-        self.pdf_input_r, self.pdf_input_g, self.pdf_input_b = \
-            self.plotHistogram(self.input_rgb, self.inputcanvas, self.figure_plotinput)
+        self.plotHistogram(self.input_rgb, self.inputcanvas, self.figure_plotinput)
 
 
     def openTargetImage(self):
@@ -63,8 +62,7 @@ class App(QMainWindow):
         self.target_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
         self.vbox_target.addWidget(self.targetcanvas)
 
-        self.pdf_target_r, self.pdf_target_g, self.pdf_target_b = \
-            self.plotHistogram(self.target_rgb, self.targetcanvas, self.figure_plottarget)
+        self.plotHistogram(self.target_rgb, self.targetcanvas, self.figure_plottarget)
 
     def initUI(self):
         # Write GUI initialization code
@@ -141,18 +139,21 @@ class App(QMainWindow):
             QMessageBox.information(self, "Error", "Load target image")
             return None
 
-        result = self.calcHistogram(self.input_rgb, self.target_rgb)
+        # Calculate the resulting image by histogram matching
+        result = self.calcImg(self.input_rgb, self.target_rgb)
+
+        # Show the resulting image in gui
         height, width, channel = result.shape
         bytesPerLine = 3 * width
         qImg = QImage(result.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-
         self.result_img.setPixmap(QPixmap(qImg).scaled(500,500))
+
+        # Show the histograms of the resulting image in gui
         self.vbox_result.addWidget(self.resultcanvas)
         self.plotHistogram(result, self.resultcanvas, self.figure_result)
 
 
-
+    # Shows and plots the histograms of each channel
     def plotHistogram(self, rgb_img, canvas, figure):
 
         self.input_r, self.input_g, self.input_b = cv2.split(rgb_img)
@@ -182,8 +183,8 @@ class App(QMainWindow):
 
         canvas.draw()
 
-        return pdf_r, pdf_g, pdf_b
 
+    # Returns the probability distribution histogram of each channel in an image
     def findPdf(self, channel):
         flat = channel.flatten()
         frequency = np.zeros((256), dtype=int)
@@ -195,29 +196,39 @@ class App(QMainWindow):
 
         return pdf
 
-    def calcHistogram(self, input, target):
+    # Calculates resulting image by histogram matching, returns the result
+    def calcImg(self, input, target):
         # Calculate histogram
 
         input_r, input_g, input_b = cv2.split(input)
         target_r, target_g, target_b = cv2.split(target)
 
-        cdf_input_r = np.cumsum(self.pdf_input_r)
-        cdf_input_g = np.cumsum(self.pdf_input_g)
-        cdf_input_b = np.cumsum(self.pdf_input_b)
+        pdf_input_r = self.findPdf(input_r)
+        pdf_input_g = self.findPdf(input_g)
+        pdf_input_b = self.findPdf(input_b)
+        pdf_target_r = self.findPdf(input_r)
+        pdf_target_g = self.findPdf(input_g)
+        pdf_target_b = self.findPdf(input_b)
 
-        cdf_target_r = np.cumsum(self.pdf_target_r)
-        cdf_target_g = np.cumsum(self.pdf_target_g)
-        cdf_target_b = np.cumsum(self.pdf_target_b)
+        cdf_input_r = np.cumsum(pdf_input_r)
+        cdf_input_g = np.cumsum(pdf_input_g)
+        cdf_input_b = np.cumsum(pdf_input_b)
+        cdf_target_r = np.cumsum(pdf_target_r)
+        cdf_target_g = np.cumsum(pdf_target_g)
+        cdf_target_b = np.cumsum(pdf_target_b)
 
+        # calculate the resulting images from each channel
         result_r = self.histogramMatch(input_r, target_r, cdf_input_r, cdf_target_r)
         result_g = self.histogramMatch(input_g, target_g, cdf_input_g, cdf_target_g)
         result_b = self.histogramMatch(input_b, target_b, cdf_input_b, cdf_target_b)
 
+        # merge channels and convert image format to uint8
         result_rgb = cv2.merge((result_r, result_g, result_b))
         result_rgb = np.uint8(result_rgb)
 
         return result_rgb
 
+    # Histogram Matching algorithm returns a channel for resulting image using matching algorithm
     def histogramMatch(self, input, target, cdf_input, cdf_target):
         R, C = input.shape
         img = np.zeros((R, C), dtype=int)
